@@ -1,0 +1,9 @@
+# Ignora todos
+*
+# Com exceção destes
+!.gitignore
+!grafo.c
+!teste.c
+!grafo.h
+!Makefile
+!grafos
