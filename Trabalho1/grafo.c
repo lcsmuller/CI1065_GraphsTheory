@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "grafo.h"
+#include <assert.h>
 
 grafo
 le_grafo(void)
@@ -33,17 +34,42 @@ n_arestas(grafo g)
 
 int
 grau(vertice v, grafo g)
-{
-    (void)v;
-    (void)g;
-    return 0;
+{   
+    int k = 0;
+    Agedge_t * edge   = agfstout(g, v);
+        while (edge != NULL) {
+            assert(edge);
+            printf("Iterating through yet another edge \n");
+            assert(agtail(edge) == v);
+            edge = agnxtout(g, edge);
+            k++;
+
+        }
+    return k;
 }
 
 int
 grau_maximo(grafo g)
 {
-    (void)g;
-    return 0;
+    int k;
+    int max = 0;
+    Agnode_t * node = agfstnode(g);
+    while (node != NULL) {
+        assert(node);
+        printf("Iterating through yet another node\n");
+        char  * label = agget(node, "label");
+        printf("Node label is %s\n", label);
+        k = grau(node,g);
+
+
+        if (k >= max){
+            max = k;
+        }
+        /* Move on to the next node */
+        printf("\n");
+        node  = agnxtnode(g, node);
+    }
+    return max;
 }
 
 int
