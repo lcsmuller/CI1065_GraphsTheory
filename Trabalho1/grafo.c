@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "grafo.h"
-#include <assert.h>
+
+/** uma aresta de um grafo ou subgrafo */
+typedef Agedge_t *aresta;
 
 grafo
 le_grafo(void)
@@ -35,69 +37,63 @@ n_arestas(grafo g)
 int
 grau(vertice v, grafo g)
 {   
-    int k = 0;
-    Agedge_t * edge   = agfstout(g, v);
-        while (edge != NULL) {
-            assert(edge);
-            printf("Iterating through yet another edge \n");
-            assert(agtail(edge) == v);
-            edge = agnxtout(g, edge);
-            k++;
-
-        }
-    return k;
+    return agdegree(g, v, TRUE, TRUE);
 }
 
 int
 grau_maximo(grafo g)
 {
-    int k;
-    int max = 0;
-    Agnode_t * node = agfstnode(g);
-    while (node != NULL) {
-        assert(node);
-        printf("Iterating through yet another node\n");
-        char  * label = agget(node, "label");
-        printf("Node label is %s\n", label);
-        k = grau(node,g);
-
-
-        if (k >= max){
-            max = k;
-        }
-        /* Move on to the next node */
-        printf("\n");
-        node  = agnxtnode(g, node);
-    }
+    int max = 0, tmp;
+    for (vertice v = agfstnode(g); v != NULL; v = agnxtnode(g, v))
+        if (max < (tmp = grau(v, g))) max = tmp;
     return max;
 }
 
 int
 grau_minimo(grafo g)
 {
-    (void)g;
-    return 0;
+    vertice v = agfstnode(g);
+    int min = grau(v, g), tmp;
+    if (v != NULL) {
+        for (v = agnxtnode(g, v); v != NULL; v = agnxtnode(g, v))
+	    if (min > (tmp = grau(v, g))) min = tmp;
+    }
+    return min;
 }
 
 int
 grau_medio(grafo g)
 {
-    (void)g;
-    return 0;
+    int sum = 0, k = 0;
+    for (vertice v = agfstnode(g); v != NULL; v = agnxtnode(g, v)) {
+	sum += grau(v, g);
+	++k;
+    }
+    return k != 0 ? sum / k : 0;
 }
 
 int
 regular(grafo g)
 {
-    (void)g;
-    return 0;
+    vertice v = agfstnode(g);
+    const int grau_esperado = grau(v, g);
+    if (v != NULL) {
+        for (v = agnxtnode(g, v); v != NULL; v = agnxtnode(g, v))
+	    if (grau_esperado != grau(v, g)) return 0;
+    }
+    return 1;
 }
 
 int
 completo(grafo g)
 {
-    (void)g;
-    return 0;
+    /* para ser completo é preciso ser não direcionado e simples */
+    if (agisdirected(g) || agissimple(g)) return 0;
+    /* cada vértice deverá apontar para todos os outros vértices restantes */
+    const int grau_esperado = n_arestas(g) - 1;
+    for (vertice v = agfstnode(g); v != NULL; v = agnxtnode(g, v))
+	if (grau_esperado != grau(v, g)) return 0;
+    return 1;
 }
 
 int
