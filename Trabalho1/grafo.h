@@ -138,4 +138,7 @@ int **matriz_adjacencia(grafo g);
  */
 grafo complemento(grafo g);
 
+
+void imprime_matriz_adjacencia(int **matriz,int tam);
+
 #endif /* _GRAFO_H_ */
