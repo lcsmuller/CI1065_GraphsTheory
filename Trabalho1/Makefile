@@ -3,7 +3,7 @@ CC ?= gcc
 OBJS = grafo.o
 EXE  = teste
 
-CFLAGS = -std=c99 -pipe \
+CFLAGS = -std=c99 -pipe -g \
          -ggdb3 -Wstrict-overflow=5 -fstack-protector-all \
          -W -Wall -Wextra -Wbad-function-cast -Wcast-align -Wcast-qual \
          -Wconversion -Wfloat-equal -Wformat-y2k -Winit-self -Winline \
