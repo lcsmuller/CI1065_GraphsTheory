@@ -1,4 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "grafo.h"
 #include <stdlib.h>
 #include <string.h>
@@ -38,7 +41,7 @@ n_arestas(grafo g)
 
 int
 grau(vertice v, grafo g)
-{   
+{
     return agdegree(g, v, TRUE, TRUE);
 }
 
@@ -58,7 +61,7 @@ grau_minimo(grafo g)
     int min = grau(v, g), tmp;
     if (v != NULL) {
         for (v = agnxtnode(g, v); v != NULL; v = agnxtnode(g, v))
-	    if (min > (tmp = grau(v, g))) min = tmp;
+            if (min > (tmp = grau(v, g))) min = tmp;
     }
     return min;
 }
@@ -68,8 +71,8 @@ grau_medio(grafo g)
 {
     int sum = 0, k = 0;
     for (vertice v = agfstnode(g); v != NULL; v = agnxtnode(g, v)) {
-	sum += grau(v, g);
-	++k;
+        sum += grau(v, g);
+        ++k;
     }
     return k != 0 ? sum / k : 0;
 }
@@ -81,7 +84,7 @@ regular(grafo g)
     const int grau_esperado = grau(v, g);
     if (v != NULL) {
         for (v = agnxtnode(g, v); v != NULL; v = agnxtnode(g, v))
-	    if (grau_esperado != grau(v, g)) return 0;
+            if (grau_esperado != grau(v, g)) return 0;
     }
     return 1;
 }
@@ -93,8 +96,8 @@ completo(grafo g)
     if (agisdirected(g) || agissimple(g)) return 0;
     /* cada vértice deverá apontar para todos os outros vértices restantes */
     const int grau_esperado = n_vertices(g) - 1;
-    	for (vertice v = agfstnode(g); v != NULL; v = agnxtnode(g, v))
-			if (grau_esperado != grau(v, g)) return 0;
+    for (vertice v = agfstnode(g); v != NULL; v = agnxtnode(g, v))
+        if (grau_esperado != grau(v, g)) return 0;
     return 1;
 }
 
@@ -132,23 +135,24 @@ n_triangulos(grafo g)
 int **
 matriz_adjacencia(grafo g)
 {
-    int **matriz =  malloc((long unsigned int)n_vertices(g)*sizeof(int*));
-    for (int i = 0; i < n_vertices(g); i++){
-        matriz[i] =  malloc((long unsigned int)n_vertices(g)*sizeof(int));
-    }
+    const int tam = n_vertices(g);
+    /* TODO: usar truque do maziero pra inicializar matriz em uma única
+     *      alocação */
+    int **matriz = malloc((long unsigned int)tam * sizeof(int *));
+    for (int i = 0; i < tam; i++)
+        matriz[i] = malloc((long unsigned int)tam * sizeof(int));
     int i = 0;
-    int j = 0; 
-    for (vertice v1 = agfstnode(g); v1 != NULL; v1 = agnxtnode(g, v1)){
-        j = i + 1;
-        for (vertice u1 = agnxtnode(g, v1); u1 != NULL; u1 = agnxtnode(g, u1)){
-            if (NULL != agedge(g,v1,u1,NULL,FALSE)){
-                //printf("tem aresta aqui\n");
-                matriz[i][j] = 1;
-                matriz[j][i] = 1;
+    for (vertice v1 = agfstnode(g); v1 != NULL; v1 = agnxtnode(g, v1)) {
+        int j = i + 1;
+        for (vertice u1 = agnxtnode(g, v1); u1 != NULL; u1 = agnxtnode(g, u1))
+        {
+            if (NULL != agedge(g, v1, u1, NULL, FALSE)) {
+                printf("tem aresta aqui\n");
+                matriz[i][j] = matriz[j][i] = 1;
             }
-        j++;
+            j++;
         }
-    i++;
+        i++;
     }
     return matriz;
 }
@@ -156,36 +160,38 @@ matriz_adjacencia(grafo g)
 grafo
 complemento(grafo g)
 {
-    //cria o nome da matriz como "complementar de <nome de g>"
-    char placeholder[30] = "complementar de";
-    char * restrict nome  = strcat(placeholder, agnameof(g));
-    //aloca o grafo , que herda as configuracoes do grafo g (g->desc)
-    grafo aux = agopen(nome,g->desc,NULL); 
-    //preenche os vertices
-    for (vertice v = agfstnode(g); v != NULL; v = agnxtnode(g, v)){
-        agnode(aux,agnameof(v),TRUE);
-    }
-    //preenche as arestas
+    // cria o nome da matriz como "complementar de <nome de g>"
+    char nome[256] = "";
+    snprintf(nome, sizeof(nome), "complementar de %s", agnameof(g));
+    // aloca o grafo , que herda as configuracoes do grafo g (g->desc)
+    grafo aux = agopen(nome, g->desc, NULL);
+    // preenche os vertices
+    for (vertice v = agfstnode(g); v != NULL; v = agnxtnode(g, v))
+        agnode(aux, agnameof(v), TRUE);
+    // preenche as arestas
     vertice v2 = agfstnode(aux);
-    for (vertice v1 = agfstnode(g); v1 != NULL; v1 = agnxtnode(g, v1)){
+    for (vertice v1 = agfstnode(g); v1 != NULL; v1 = agnxtnode(g, v1)) {
         vertice u2 = agnxtnode(aux, v2);
-        for (vertice u1 = agnxtnode(g, v1); u1 != NULL; u1 = agnxtnode(g, u1)){
-            if (NULL == agedge(g,v1,u1,NULL,FALSE)){
+        for (vertice u1 = agnxtnode(g, v1); u1 != NULL; u1 = agnxtnode(g, u1))
+        {
+            if (NULL == agedge(g, v1, u1, NULL, FALSE)) {
                 printf("tem aresta aqui\n");
-                agedge(aux,v2,u2,NULL,TRUE);
+                agedge(aux, v2, u2, NULL, TRUE);
             }
-        u2 = agnxtnode(aux, u2);   
+            u2 = agnxtnode(aux, u2);
         }
-    v2 = agnxtnode(aux, v2);
+        v2 = agnxtnode(aux, v2);
     }
     return aux;
 }
 
-void imprime_matriz_adjacencia(int **matriz,int tam){
-    for (int i=0; i < tam; i++){
-        for (int j=0; j < tam; j++)
-            printf("%i ",matriz[i][j] );
-        printf("\n");        
+void
+imprime_matriz_adjacencia(int **matriz, int tam)
+{
+    for (int i = 0; i < tam; i++) {
+        for (int j = 0; j < tam; j++)
+            printf("%i ", matriz[i][j]);
+        printf("\n");
     }
     printf("\n");
 }
