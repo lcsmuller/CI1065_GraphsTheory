@@ -101,14 +101,23 @@ completo(grafo g)
     return 1;
 }
 
+/* verifica contexto do vértice para conexo() */
+struct contexto_vertice {
+    Agrec_t header;
+    long visitado; /* TRUE se foi visitado, FALSE caso contrário */
+};
+
+static char TAG[] = "contexto_vertice";
+
 static int
 _conexo(grafo g, vertice v)
 {
-    static char tag[] = "visitado";
-    /* retorna se vértice já foi visitado */
-    if (agbindrec(v, tag, 0, TRUE)) return 0;
-    /* marca vértice como visitado */
-    agbindrec(v, tag, sizeof(char), TRUE);
+    struct contexto_vertice *cxt;
+    if (NULL == (cxt = agbindrec(v, TAG, 0, FALSE)))
+        cxt = agbindrec(v, TAG, sizeof *cxt, FALSE);
+    else if (TRUE == cxt->visitado) /* retorna se vértice já foi visitado */
+        return 0;
+    cxt->visitado = TRUE; /* marca vértice como visitado */
     /* checa todos os outros vértices possíveis de acessar a partir do atual */
     int n_arestas = 0;
     for (aresta a = agfstedge(g, v); a != NULL; a = agnxtedge(g, a, v))
@@ -119,7 +128,13 @@ _conexo(grafo g, vertice v)
 int
 conexo(grafo g)
 {
-    return n_vertices(g) == _conexo(g, agfstnode(g));
+    int retval = n_vertices(g) == _conexo(g, agfstnode(g));
+    struct contexto_vertice *cxt;
+    /* reseta flag para 'visitas' do vértice */
+    for (vertice v = agfstnode(g); v != NULL; v = agnxtnode(g, v))
+        if (NULL != (cxt = agbindrec(v, TAG, 0, FALSE)))
+            cxt->visitado = FALSE;
+    return retval;
 }
 
 int
