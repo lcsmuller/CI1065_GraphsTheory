@@ -101,11 +101,23 @@ completo(grafo g)
     return 1;
 }
 
+static int
+_conexo(grafo g, vertice v)
+{
+    if (agbindrec(v, "visitado", 0, TRUE)) return 0;
+
+    agbindrec(v, "visitado", sizeof(char), TRUE); // marca como visitado
+
+    int n_arestas = 0;
+    for (aresta a = agfstedge(g, v); a != NULL; a = agnxtedge(g, a, v))
+        n_arestas += _conexo(g, agtail(a)) + _conexo(g, aghead(a));
+    return n_arestas + 1;
+}
+
 int
 conexo(grafo g)
 {
-    (void)g;
-    return 0;
+    return _conexo(g, agfstnode(g)) == n_vertices(g);
 }
 
 int
@@ -158,15 +170,18 @@ bipartido(grafo g)
 
 int
 n_triangulos(grafo g)
-{	
-	int triangulo = 0;
-    for (vertice v1 = agfstnode(g); v1 != NULL; v1 = agnxtnode(g, v1)){
-        for (vertice u1 = agnxtnode(g, v1); u1 != NULL; u1 = agnxtnode(g, u1)){
-            if (NULL != agedge(g,v1,u1,NULL,FALSE)){
-                for (vertice k1 = agnxtnode(g, u1); k1 != NULL; k1 = agnxtnode(g, k1)){
-           			if (NULL != agedge(g,u1,k1,NULL,FALSE) && NULL != agedge(g,k1,v1,NULL,FALSE))
-           				triangulo++;
-           		}	
+{
+    int triangulo = 0;
+    for (vertice v1 = agfstnode(g); v1 != NULL; v1 = agnxtnode(g, v1)) {
+        for (vertice u1 = agnxtnode(g, v1); u1 != NULL; u1 = agnxtnode(g, u1))
+        {
+            if (NULL != agedge(g, v1, u1, NULL, FALSE)) {
+                for (vertice k1 = agnxtnode(g, u1); k1 != NULL;
+                     k1 = agnxtnode(g, k1)) {
+                    if (NULL != agedge(g, u1, k1, NULL, FALSE)
+                        && NULL != agedge(g, k1, v1, NULL, FALSE))
+                        triangulo++;
+                }
             }
         }
     }
@@ -195,7 +210,7 @@ matriz_adjacencia(grafo g)
                 //printf("tem aresta aqui\n");
                 matriz[i][j] = matriz[j][i] = 1;
             }
-            else{
+            else {
             	matriz[i][j] = matriz[j][i] = 0;
             }
             j++;
@@ -222,10 +237,8 @@ complemento(grafo g)
         vertice u2 = agnxtnode(aux, v2);
         for (vertice u1 = agnxtnode(g, v1); u1 != NULL; u1 = agnxtnode(g, u1))
         {
-            if (NULL == agedge(g, v1, u1, NULL, FALSE)) {
-                //printf("tem aresta aqui\n");
+            if (NULL == agedge(g, v1, u1, NULL, FALSE))
                 agedge(aux, v2, u2, NULL, TRUE);
-            }
             u2 = agnxtnode(aux, u2);
         }
         v2 = agnxtnode(aux, v2);
