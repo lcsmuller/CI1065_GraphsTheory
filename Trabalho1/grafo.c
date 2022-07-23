@@ -104,10 +104,12 @@ completo(grafo g)
 static int
 _conexo(grafo g, vertice v)
 {
-    if (agbindrec(v, "visitado", 0, TRUE)) return 0;
-
-    agbindrec(v, "visitado", sizeof(char), TRUE); // marca como visitado
-
+    static char tag[] = "visitado";
+    /* retorna se vértice já foi visitado */
+    if (agbindrec(v, tag, 0, TRUE)) return 0;
+    /* marca vértice como visitado */
+    agbindrec(v, tag, sizeof(char), TRUE);
+    /* checa todos os outros vértices possíveis de acessar a partir do atual */
     int n_arestas = 0;
     for (aresta a = agfstedge(g, v); a != NULL; a = agnxtedge(g, a, v))
         n_arestas += _conexo(g, agtail(a)) + _conexo(g, aghead(a));
@@ -117,54 +119,52 @@ _conexo(grafo g, vertice v)
 int
 conexo(grafo g)
 {
-    return _conexo(g, agfstnode(g)) == n_vertices(g);
+    return n_vertices(g) == _conexo(g, agfstnode(g));
 }
 
 int
 bipartido(grafo g)
 {
-    vertice *ver = malloc ((long unsigned int)n_vertices(g)* sizeof(vertice));
+    vertice *ver = malloc((long unsigned int)n_vertices(g) * sizeof(vertice));
     int tam_ver = 0;
-    vertice *azul = malloc ((long unsigned int)n_vertices(g)* sizeof(vertice));
+    vertice *azul = malloc((long unsigned int)n_vertices(g) * sizeof(vertice));
     int tam_azul = 0;
     int i = 0;
     int j = 0;
     int flag;
     int resp = 1;
-    for (vertice v1 = agfstnode(g); v1 != NULL; v1 = agnxtnode(g, v1)){
-    	flag = 0;
-    	for (int k = 0; k < tam_azul ; k++){
-    		if (v1 == azul[k])
-    			flag = 1;
-    	}
-    	if (flag == 0){
-    		ver[i] = v1;
-    		i++;
-    		tam_ver++;
-	        for (vertice u1 = agnxtnode(g, v1); u1 != NULL; u1 = agnxtnode(g, u1)){
-	            if (NULL != agedge(g,v1,u1,NULL,FALSE)){
-	            	azul[j] = u1;
-	            	j++;
-	            	tam_azul++;
-	            }
-	        }
-	    }	
-	   
+
+    for (vertice v1 = agfstnode(g); v1 != NULL; v1 = agnxtnode(g, v1)) {
+        flag = 0;
+        for (int k = 0; k < tam_azul; k++) {
+            if (v1 == azul[k]) flag = 1;
+        }
+        if (flag == 0) {
+            ver[i] = v1;
+            i++;
+            tam_ver++;
+            for (vertice u1 = agnxtnode(g, v1); u1 != NULL;
+                 u1 = agnxtnode(g, u1)) {
+                if (NULL != agedge(g, v1, u1, NULL, FALSE)) {
+                    azul[j] = u1;
+                    j++;
+                    tam_azul++;
+                }
+            }
+        }
     }
-    for (i = 0; i < tam_ver; i++){
-    	for (j = i; j < tam_ver; j++){
-    		if (NULL != agedge(g,ver[i],ver[j],NULL,FALSE))
-    			resp = 0;        		
-    	}	        	
-   	}
-   	for (i = 0; i < tam_azul; i++){
-    	for (j = i; j < tam_azul; j++){
-    		if (NULL != agedge(g,azul[i],azul[j],NULL,FALSE))
-    			resp = 0;        		
-    	}	        	
-   	}
-   	free(ver);
-   	free(azul);	        	
+    for (i = 0; i < tam_ver; i++) {
+        for (j = i; j < tam_ver; j++) {
+            if (NULL != agedge(g, ver[i], ver[j], NULL, FALSE)) resp = 0;
+        }
+    }
+    for (i = 0; i < tam_azul; i++) {
+        for (j = i; j < tam_azul; j++) {
+            if (NULL != agedge(g, azul[i], azul[j], NULL, FALSE)) resp = 0;
+        }
+    }
+    free(ver);
+    free(azul);
     return resp;
 }
 
@@ -196,23 +196,17 @@ matriz_adjacencia(grafo g)
      *      alocação */
     int **matriz = malloc((long unsigned int)tam * sizeof(int *));
     for (int i = 0; i < tam; i++)
-        matriz[i] = malloc((long unsigned int)tam * sizeof(int));
-    int i;
-    for (i = 0; i < tam; i++){
-    	matriz[i][i] = 0;
-    }
-    i = 0;
+        matriz[i] = calloc((size_t)tam, sizeof(int));
+
+    int i = 0;
     for (vertice v1 = agfstnode(g); v1 != NULL; v1 = agnxtnode(g, v1)) {
         int j = i + 1;
         for (vertice u1 = agnxtnode(g, v1); u1 != NULL; u1 = agnxtnode(g, u1))
         {
-            if (NULL != agedge(g, v1, u1, NULL, FALSE)) {
-                //printf("tem aresta aqui\n");
+            if (NULL != agedge(g, v1, u1, NULL, FALSE))
                 matriz[i][j] = matriz[j][i] = 1;
-            }
-            else {
-            	matriz[i][j] = matriz[j][i] = 0;
-            }
+            else
+                matriz[i][j] = matriz[j][i] = 0;
             j++;
         }
         i++;
@@ -224,7 +218,7 @@ grafo
 complemento(grafo g)
 {
     // cria o nome da matriz como "complementar de <nome de g>"
-    char nome[256] = "";
+    char nome[256];
     snprintf(nome, sizeof(nome), "complementar de %s", agnameof(g));
     // aloca o grafo , que herda as configuracoes do grafo g (g->desc)
     grafo aux = agopen(nome, g->desc, NULL);
@@ -257,9 +251,11 @@ imprime_matriz(int **matriz, int tam)
     printf("\n");
 }
 
-void libera_matriz(int **matriz,int tam){
-	for (int i = 0; i < tam; i++) 
-         free(matriz[i]);
+void
+libera_matriz(int **matriz, int tam)
+{
+    for (int i = 0; i < tam; i++)
+        free(matriz[i]);
     free(matriz);
-    return;     
+    return;
 }

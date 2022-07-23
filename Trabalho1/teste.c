@@ -11,8 +11,8 @@ main(void)
     printf(" grau maximo: %i | grau mínimo: %i | grau médio: %i \n",
            grau_maximo(g), grau_minimo(g), grau_medio(g));
     printf(" numero de triangulos do grafo: %i \n", n_triangulos(g));
-    printf(" regular: %i | completo: %i | conexo: %i | bipartido: %i \n", regular(g),
-           completo(g), conexo(g), bipartido(g));
+    printf(" regular: %i | completo: %i | conexo: %i | bipartido: %i \n",
+           regular(g), completo(g), conexo(g), bipartido(g));
 
     escreve_grafo(g);
     // destroi_grafo(g);
@@ -21,15 +21,15 @@ main(void)
     printf(" numero de vertices do grafo: %i \n", n_vertices(comp));
     printf(" numero de arestas do grafo: %i \n", n_arestas(comp));
     printf(" grau maximo: %i | grau mínimo: %i | grau médio: %i \n",
-		grau_maximo(comp), grau_minimo(comp), grau_medio(comp));
+           grau_maximo(comp), grau_minimo(comp), grau_medio(comp));
     printf(" numero de triangulos do grafo: %i \n", n_triangulos(comp));
     printf(" regular: %i | completo: %i  | conexo: %i | bipartido: %i \n",
            regular(comp), completo(comp), conexo(comp), bipartido(comp));
 
-    int **matriz = matriz_adjacencia(g); 
-    imprime_matriz(matriz,n_vertices(g));
-	escreve_grafo(comp);
-    libera_matriz(matriz,n_vertices(g));
+    int **matriz = matriz_adjacencia(g);
+    imprime_matriz(matriz, n_vertices(g));
+    escreve_grafo(comp);
+    libera_matriz(matriz, n_vertices(g));
     destroi_grafo(comp);
     destroi_grafo(g);
 
