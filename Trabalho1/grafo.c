@@ -3,6 +3,8 @@
 #include <string.h>
 
 #include "grafo.h"
+#include <stdlib.h>
+#include <string.h>
 
 /** uma aresta de um grafo ou subgrafo */
 typedef Agedge_t *aresta;
@@ -116,8 +118,18 @@ bipartido(grafo g)
 int
 n_triangulos(grafo g)
 {
-    (void)g;
-    return 0;
+	int triangulo = 0;
+    for (vertice v1 = agfstnode(g); v1 != NULL; v1 = agnxtnode(g, v1)){
+        for (vertice u1 = agnxtnode(g, v1); u1 != NULL; u1 = agnxtnode(g, u1)){
+            if (NULL != agedge(g,v1,u1,NULL,FALSE)){
+                for (vertice k1 = agnxtnode(g, u1); k1 != NULL; k1 = agnxtnode(g, k1)){
+           			if (NULL != agedge(g,u1,k1,NULL,FALSE) && NULL != agedge(g,k1,v1,NULL,FALSE))
+           				triangulo++;
+           		}	
+            }
+        }
+    }
+    return triangulo;
 }
 
 int **
