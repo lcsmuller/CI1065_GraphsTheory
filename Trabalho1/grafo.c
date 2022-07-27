@@ -134,24 +134,93 @@ bipartido(grafo g)
     int flag;
     int resp = 1;
 
-    for (vertice v1 = agfstnode(g); v1 != NULL; v1 = agnxtnode(g, v1)) {
-        flag = 0;
-        for (int k = 0; k < tam_azul; k++) {
-            if (v1 == azul[k]) flag = 1;
+    vertice v1 = agfstnode(g);
+    ver[i] = v1;
+    i++;
+    tam_ver++;
+    for (vertice u1 = agnxtnode(g, v1); u1 != NULL; u1 = agnxtnode(g, u1)) {
+        if (NULL != agedge(g, v1, u1, NULL, FALSE)) {
+            azul[j] = u1;
+            j++;
+            tam_azul++;
         }
-        if (flag == 0) {
-            ver[i] = v1;
-            i++;
-            tam_ver++;
-            for (vertice u1 = agnxtnode(g, v1); u1 != NULL;
-                 u1 = agnxtnode(g, u1)) {
+    }
+    int k_azul_antigo = 0;
+    int k_ver_antigo = tam_ver;
+    int flag_vermelho;
+    int flag_azul;
+    while (i + j < n_vertices(g)){
+        flag_vermelho = 0;
+        for (int k = k_azul_antigo; k < tam_azul; k++) {
+            v1 = azul[k];
+            for (vertice u1 = agfstnode(g); u1 != NULL; u1 = agnxtnode(g, u1)) {
                 if (NULL != agedge(g, v1, u1, NULL, FALSE)) {
-                    azul[j] = u1;
-                    j++;
-                    tam_azul++;
+                    flag = 0;
+                    for (int L = 0; L < tam_ver; L++) {
+                        if (u1 == ver[L]) {
+                            flag = 1;
+                            break;
+                        }
+                    }
+                    if (!flag){
+                        flag_vermelho = 1;
+                        ver[i] = u1;
+                        i++;
+                        tam_ver++;
+                    }
                 }
             }
         }
+        k_azul_antigo = tam_azul;
+        
+        flag_azul = 0;
+        for (int k = k_ver_antigo; k < tam_ver; k++) {
+            v1 = ver[k];
+            for (vertice u1 = agfstnode(g); u1 != NULL; u1 = agnxtnode(g, u1)) {
+                if (NULL != agedge(g, v1, u1, NULL, FALSE)) {
+                    flag = 0;
+                    for (int L = 0; L < tam_azul; L++) {
+                        if (u1 == azul[L]) {
+                            flag = 1;
+                            break;
+                        }
+                    }
+                    if (!flag){
+                        flag_azul = 1;
+                        azul[j] = u1;
+                        j++;
+                        tam_azul++;
+                    }
+                }
+            }    
+        }
+        k_ver_antigo = tam_ver;
+
+        if(!flag_azul && !flag_vermelho){
+            for(v1 = agfstnode(g); v1 != NULL; v1 = agnxtnode(g, v1)){
+                flag_azul = 0;
+                flag_vermelho = 0;
+                for (int L = 0; L < tam_azul; L++) {
+                    if (v1 == azul[L]) {
+                        flag_azul = 1;
+                        break  ;
+                    }
+                }
+                if (flag_azul == 0){
+                    for (int L = 0; L < tam_ver; L++) {
+                        if (v1 == ver[L]) {
+                            flag_vermelho = 1;
+                        }
+                    }
+                }
+                if(!flag_vermelho && !flag_azul){
+                    ver[i] = v1;
+                    i++;
+                    tam_ver ++;
+                    break;
+                }        
+            }
+        } 
     }
     for (i = 0; i < tam_ver; i++) {
         for (j = i; j < tam_ver; j++) {
