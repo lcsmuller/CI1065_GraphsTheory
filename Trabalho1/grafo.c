@@ -125,15 +125,17 @@ conexo(grafo g)
 int
 bipartido(grafo g)
 {
+    //aloca os vetores de vertices vermelho e azul 
     vertice *ver = malloc((long unsigned int)n_vertices(g) * sizeof(vertice));
-    int tam_ver = 0;
+    int tam_ver = 0;        
     vertice *azul = malloc((long unsigned int)n_vertices(g) * sizeof(vertice));
-    int tam_azul = 0;
-    int i = 0;
-    int j = 0;
-    int flag;
-    int resp = 1;
+    int tam_azul = 0; 
+    int i = 0;      // indice de azul 
+    int j = 0;      // indice de vermelho
+    int flag;       // variavel de controle
+    int resp = 1;   // valor a ser retornado, é necessario para poder desalocar os vertices
 
+    //pega o nodo inicia coloca ele em vermelho e sua fronteira em azul
     vertice v1 = agfstnode(g);
     ver[i] = v1;
     i++;
@@ -149,13 +151,17 @@ bipartido(grafo g)
     int k_ver_antigo = tam_ver;
     int flag_vermelho;
     int flag_azul;
+
+    //enquanto a lista vermelho + lista azul nao pegarem todos os vertices
     while (i + j < n_vertices(g)){
         flag_vermelho = 0;
+        //para cada elemento azul, expanda sua fronteira 
         for (int k = k_azul_antigo; k < tam_azul; k++) {
             v1 = azul[k];
             for (vertice u1 = agfstnode(g); u1 != NULL; u1 = agnxtnode(g, u1)) {
                 if (NULL != agedge(g, v1, u1, NULL, FALSE)) {
                     flag = 0;
+                    //caso esse elemento ja nao esteja em vermelho coloque ele em vermelho
                     for (int L = 0; L < tam_ver; L++) {
                         if (u1 == ver[L]) {
                             flag = 1;
@@ -174,11 +180,14 @@ bipartido(grafo g)
         k_azul_antigo = tam_azul;
         
         flag_azul = 0;
+
+        //para cada elemento de vermelho, expanda sua fronteira 
         for (int k = k_ver_antigo; k < tam_ver; k++) {
             v1 = ver[k];
             for (vertice u1 = agfstnode(g); u1 != NULL; u1 = agnxtnode(g, u1)) {
                 if (NULL != agedge(g, v1, u1, NULL, FALSE)) {
                     flag = 0;
+                    //caso esse elemento ja nao esteja em azul coloque ele em azul
                     for (int L = 0; L < tam_azul; L++) {
                         if (u1 == azul[L]) {
                             flag = 1;
@@ -196,6 +205,7 @@ bipartido(grafo g)
         }
         k_ver_antigo = tam_ver;
 
+        //caso G tenha mais de 1 componente e a ultima componente descoberta tenha sido preeenchida totalmente, ache a proxima componente
         if(!flag_azul && !flag_vermelho){
             for(v1 = agfstnode(g); v1 != NULL; v1 = agnxtnode(g, v1)){
                 flag_azul = 0;
@@ -210,6 +220,7 @@ bipartido(grafo g)
                     for (int L = 0; L < tam_ver; L++) {
                         if (v1 == ver[L]) {
                             flag_vermelho = 1;
+                            break;
                         }
                     }
                 }
@@ -222,11 +233,13 @@ bipartido(grafo g)
             }
         } 
     }
+    //verifica se todos os nodos de vermelho nao sao vizinhos 
     for (i = 0; i < tam_ver; i++) {
         for (j = i; j < tam_ver; j++) {
             if (NULL != agedge(g, ver[i], ver[j], NULL, FALSE)) resp = 0;
         }
     }
+    //verifica se todos os nodos de azul nao sao vizinhos 
     for (i = 0; i < tam_azul; i++) {
         for (j = i; j < tam_azul; j++) {
             if (NULL != agedge(g, azul[i], azul[j], NULL, FALSE)) resp = 0;
@@ -241,14 +254,19 @@ int
 n_triangulos(grafo g)
 {
     int triangulo = 0;
+    //pegue um vertice
     for (vertice v1 = agfstnode(g); v1 != NULL; v1 = agnxtnode(g, v1)) {
+        //pegeu outro vertice diferente do primeiro
         for (vertice u1 = agnxtnode(g, v1); u1 != NULL; u1 = agnxtnode(g, u1))
         {
+            //se houver uma aresta entre os 2 primeiros vertices pegue um terceito vertice
             if (NULL != agedge(g, v1, u1, NULL, FALSE)) {
                 for (vertice k1 = agnxtnode(g, u1); k1 != NULL;
                      k1 = agnxtnode(g, k1)) {
+                    //verifica se o terceti overtice tem aresta entre os outros 2
                     if (NULL != agedge(g, u1, k1, NULL, FALSE)
                         && NULL != agedge(g, k1, v1, NULL, FALSE))
+                        //caso tenha aresta entao esses 3 vertices formam um triangulo
                         triangulo++;
                 }
             }
@@ -260,18 +278,22 @@ n_triangulos(grafo g)
 int **
 matriz_adjacencia(grafo g)
 {
+    //descobre o numero de vertices para aloxar a matriz
     const int tam = n_vertices(g);
-    /* TODO: usar truque do maziero pra inicializar matriz em uma única
-     *      alocação */
+    //aloca a matriz
     int **matriz = malloc((long unsigned int)tam * sizeof(int *));
     for (int i = 0; i < tam; i++)
         matriz[i] = calloc((size_t)tam, sizeof(int));
 
+    // i,j indices da matriz 
+    //A matriz é percorrida de forma triangular, entao seu custo real é dividido por 2
     int i = 0;
+    //pega os 2 vertices
     for (vertice v1 = agfstnode(g); v1 != NULL; v1 = agnxtnode(g, v1)) {
         int j = i + 1;
         for (vertice u1 = agnxtnode(g, v1); u1 != NULL; u1 = agnxtnode(g, u1))
         {
+            //se houver aresta entre esses 2 vertices coloca o valor 1 na matriz, 0 caso contrario
             if (NULL != agedge(g, v1, u1, NULL, FALSE))
                 matriz[i][j] = matriz[j][i] = 1;
             else
@@ -300,6 +322,7 @@ complemento(grafo g)
         vertice u2 = agnxtnode(aux, v2);
         for (vertice u1 = agnxtnode(g, v1); u1 != NULL; u1 = agnxtnode(g, u1))
         {
+            //se nao houver aresta entre 2 vertices gera uma nova aresta
             if (NULL == agedge(g, v1, u1, NULL, FALSE))
                 agedge(aux, v2, u2, NULL, TRUE);
             u2 = agnxtnode(aux, u2);
@@ -309,22 +332,3 @@ complemento(grafo g)
     return aux;
 }
 
-void
-imprime_matriz(int **matriz, int tam)
-{
-    for (int i = 0; i < tam; i++) {
-        for (int j = 0; j < tam; j++)
-            printf("%i ", matriz[i][j]);
-        printf("\n");
-    }
-    printf("\n");
-}
-
-void
-libera_matriz(int **matriz, int tam)
-{
-    for (int i = 0; i < tam; i++)
-        free(matriz[i]);
-    free(matriz);
-    return;
-}
