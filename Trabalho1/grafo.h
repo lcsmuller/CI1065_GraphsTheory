@@ -138,21 +138,4 @@ int **matriz_adjacencia(grafo g);
  */
 grafo complemento(grafo g);
 
-/**
- * @brief imprime na saida padrao uma matriz
- *
- * @param g grafo `g`
- *		  tam numero de vertices de `g`	  
- */
-void imprime_matriz(int **matriz,int tam);
-
-
-/**
- * @brief libera memoria de uma matriz
- *
- * @param g grafo `g`
- *		  tam numero de vertices de `g`	  
- */
-void libera_matriz(int **matriz,int tam);
-
 #endif /* _GRAFO_H_ */

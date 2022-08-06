@@ -1,5 +1,43 @@
 #include <stdio.h>
 #include "grafo.h"
+#include <stdlib.h>
+
+/**
+ * @brief imprime na saida padrao uma matriz
+ *
+ * @param g grafo `g`
+ *        tam numero de vertices de `g`   
+ */
+void imprime_matriz(int **matriz, int tam);
+
+void
+imprime_matriz(int **matriz, int tam)
+{
+    for (int i = 0; i < tam; i++) {
+        for (int j = 0; j < tam; j++)
+            printf("%i ", matriz[i][j]);
+        printf("\n");
+    }
+    printf("\n");
+}
+
+/**
+ * @brief libera memoria de uma matriz
+ *
+ * @param g grafo `g`
+ *        tam numero de vertices de `g`   
+ */
+
+void libera_matriz(int **matriz, int tam);
+
+void
+libera_matriz(int **matriz, int tam)
+{
+    for (int i = 0; i < tam; i++)
+        free(matriz[i]);
+    free(matriz);
+    return;
+}
 
 int
 main(void)
