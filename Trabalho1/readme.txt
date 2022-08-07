@@ -61,9 +61,24 @@ int conexo(grafo g);
     vértices no grafo então significa que não há um subgrafo.
 
 int bipartido(grafo g);
+    Esta função verifica se um grafo qualquer é bipartido, ou seja,verifica se
+    seus vertices podem ser separados em 2 conjuntos de forma que todos os
+    elementos de um conjunto não seja vizinho de todos os outros elementos 
+    do mesmo conjunto. O algoritmo escolhido para verificar a bipartição é
+    o de coloração 2 do grafo, para isso todos os vertices sao dividos entre
+    2 vetores (vermelho, azul) e após todos os vertices serem coloridos,
+    há uma comparação de 2 vertices do mesmo vetor são vizinho no grafo. 
 
 int n_triangulos(grafo g);
+    Esta função conta quanto triangulos (3 vertices unidos entre si por arestas)
+    existem em um grafo. Para fazer essa contagem são escolhidos 3 vertices ,então se testa 
+    se ha aresta entre 2 vertices, se houver aresta, eles testa se há arestas entre
+    os 2 vertices encolhido anteriormente e o terceito vertice.
 
 int matriz_adjacencia(grafo g);
+    Essa função pega um grafo no formato de struct do vizgraph e a trasforma em uma
+    matriz de adjacencia.
 
 int complemento(g);
+    Essa função recebe um grafo e gera um novo grafo contendo o grafo complementar do 
+    grafo de entrada, o grafo original não é modificado. 
