@@ -343,10 +343,63 @@ complemento(grafo g)
     return aux;
 }
 
+struct grafo_ctx {
+    Agrec_t header;
+    const char pad[4]; // desabilita -Wpad warning
+    int componentes;
+};
+static char grafo_ctx_tag[] = "componentes";
 
-//------------------------------------------------------------------------------
-grafo decompoe(grafo g) {
+struct vertice_ctx {
+    Agrec_t header;
+    int estado;
+    int componente;
+};
+static char vertice_ctx_tag[] = "contexto";
 
-  return g;
+static void
+_decompoe(grafo g, vertice r)
+{
+    struct vertice_ctx *r_ctx = agbindrec(r, vertice_ctx_tag, 0, TRUE);
+    struct grafo_ctx *g_ctx = agbindrec(g, grafo_ctx_tag, 0, TRUE);
+    r_ctx->estado = 1;
+    for (aresta a = agfstedge(g, r); a != NULL; a = agnxtedge(g, a, r)) {
+        // vizinho
+        const vertice v = (aghead(a) != r) ? aghead(a) : agtail(a);
+        struct vertice_ctx *v_ctx = agbindrec(v, vertice_ctx_tag, 0, TRUE);
+        if (v_ctx->estado == 0) _decompoe(g, v);
+    }
+    r_ctx->componente = g_ctx->componentes;
+    r_ctx->estado = 2;
 }
 
+grafo
+decompoe(grafo g)
+{
+    size_t L_size = 0;
+    vertice *L = sua_func(g, &L_size);
+    struct vertice_ctx *v_ctx;
+    struct grafo_ctx *g_ctx;
+    vertice v;
+
+    for (v = agfstnode(g); v != NULL; v = agnxtnode(g, v)) {
+        v_ctx =
+            agbindrec(v, vertice_ctx_tag, sizeof(struct vertice_ctx), TRUE);
+        v_ctx->estado = 0;
+        v_ctx->componente = 0;
+    }
+
+    g_ctx = agbindrec(g, grafo_ctx_tag, sizeof(struct grafo_ctx), TRUE);
+    g_ctx->componentes = 0;
+
+    for (size_t i = 0; i < L_size; ++i) {
+        v = L[i];
+        v_ctx = agbindrec(v, vertice_ctx_tag, 0, TRUE);
+        if (v_ctx->estado == 0) {
+            ++g_ctx->componentes;
+            _decompoe(g, v);
+        }
+    }
+
+    return g;
+}
