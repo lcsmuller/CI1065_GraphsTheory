@@ -68,6 +68,8 @@ main(void)
     imprime_matriz(matriz, n_vertices(g));
     escreve_grafo(comp);
     libera_matriz(matriz, n_vertices(g));
+
+    decompoe(g);
     destroi_grafo(comp);
     destroi_grafo(g);
 
