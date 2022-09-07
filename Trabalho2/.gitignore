@@ -2,6 +2,7 @@
 *
 # Menos os seguintes arquivos
 !.gitignore
+!readme.txt
 !Makefile
 !grafos
 !grafos/*.dot
