@@ -405,12 +405,12 @@ static void
 dfsR(grafo g, vertice v, vertice *vv, int *cnt)
 {
     struct vertice_ctx *r_ctx = agbindrec(v, vertice_ctx_tag, 0, FALSE);
-
+    
     r_ctx->estado = 0;
     for (aresta a = agfstedge(g, v); a != NULL; a = agnxtedge(g, a, v)) {
         // vizinho
-        if (aghead(a) == v) {
-            const vertice r = agtail(a);
+        if (agtail(a) == v) {
+            const vertice r = aghead(a);
             struct vertice_ctx *v_ctx =
                 agbindrec(r, vertice_ctx_tag, 0, FALSE);
             if (v_ctx->estado == -1) dfsR(g, r, vv, cnt);
@@ -495,7 +495,7 @@ decompoe(grafo g)
     g_ctx->componentes = 0;
 
     L = rev_posordem(g);
-    for (int i = 0, n = n_vertices(g); i < n; ++i) {
+    for (int i = n_vertices(g)-1, n = 0; i >= n; --i) {
         v = L[i];
         v_ctx = agbindrec(v, vertice_ctx_tag, 0, FALSE);
         if (v_ctx->estado == 0) {
@@ -503,9 +503,6 @@ decompoe(grafo g)
             _decompoe(g, v);
         }
     }
-
-
-    printf("\nNº de componentes: %i\n", g_ctx->componentes);
 
     grafo * h = (grafo*)calloc((long unsigned int)g_ctx->componentes, sizeof(grafo));
 
@@ -525,11 +522,9 @@ decompoe(grafo g)
                 if(NULL != agedge(g,s,n,NULL,FALSE)){
                     aresta e = agedge(g,s,n,NULL,FALSE);
                     if (aghead(e) == n){
-                        printf("\nNº do componentes: %i || %i \n", n_ctx->componente,g_ctx->componentes);        
                         agsubedge(h[n_ctx->componente-1],agedge(g,s,n,NULL,FALSE),TRUE);
                     }
                     else{
-                        printf("\nNº do componentes: %i || %i \n", n_ctx->componente,g_ctx->componentes);        
                         agsubedge(h[n_ctx->componente-1],agedge(g,n,s,NULL,FALSE),TRUE);
                     }
                 }
@@ -537,10 +532,9 @@ decompoe(grafo g)
         }
     }
     for (int i = 0; i < g_ctx->componentes; i++){
-        printf("Componente %i: \n", i);
-        escreve_grafo(h[i]);       
+        escreve_grafo(h[i]); 
     }
-    printf("\nNº de componentes: %i\n", g_ctx->componentes);
+    free(h);
     free(L);
 
     return g;
