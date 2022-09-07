@@ -101,40 +101,25 @@ completo(grafo g)
     return 1;
 }
 
-/* verifica contexto do vértice para conexo() */
-struct contexto_vertice {
-    Agrec_t header;
-    long visitado; /* TRUE se foi visitado, FALSE caso contrário */
-};
-
-static char TAG[] = "contexto_vertice";
-
 static int
-_vertices_acessiveis(grafo g, vertice v)
+_conexo(grafo g, vertice v)
 {
-    struct contexto_vertice *cxt = agbindrec(v, TAG, 0, FALSE);
-    if (NULL == cxt)
-        cxt = agbindrec(v, TAG, sizeof *cxt, FALSE);
-    else if (TRUE == cxt->visitado) /* retorna se vértice já foi visitado */
-        return 0;
-    cxt->visitado = TRUE; /* marca vértice como visitado */
+    static char tag[] = "visitado";
+    /* retorna se vértice já foi visitado */
+    if (agbindrec(v, tag, 0, TRUE)) return 0;
+    /* marca vértice como visitado */
+    agbindrec(v, tag, sizeof(char), TRUE);
     /* checa todos os outros vértices possíveis de acessar a partir do atual */
     int n_arestas = 0;
     for (aresta a = agfstedge(g, v); a != NULL; a = agnxtedge(g, a, v))
-        n_arestas += _vertices_acessiveis(g, agtail(a))
-                     + _vertices_acessiveis(g, aghead(a));
+        n_arestas += _conexo(g, agtail(a)) + _conexo(g, aghead(a));
     return n_arestas + 1;
 }
 
 int
 conexo(grafo g)
 {
-    int retval = n_vertices(g) == _vertices_acessiveis(g, agfstnode(g));
-    struct contexto_vertice *cxt;
-    /* reseta flag para 'visitas' do vértice */
-    for (vertice v = agfstnode(g); v != NULL; v = agnxtnode(g, v))
-        if (NULL != (cxt = agbindrec(v, TAG, 0, FALSE))) cxt->visitado = FALSE;
-    return retval;
+    return n_vertices(g) == _conexo(g, agfstnode(g));
 }
 
 int
@@ -320,8 +305,18 @@ matriz_adjacencia(grafo g)
         {
             // se houver aresta entre esses 2 vertices coloca o valor 1 na
             // matriz, 0 caso contrario
-            if (NULL != agedge(g, v1, u1, NULL, FALSE))
-                matriz[i][j] = matriz[j][i] = 1;
+            if (agedge(g, v1, u1, NULL, FALSE) != NULL) {
+                aresta e = agedge(g, v1, u1, NULL, FALSE);
+                vertice vaux = aghead(e);
+                if (v1 == vaux) {
+                    matriz[i][j] = 1;
+                    matriz[j][i] = -1;
+                }
+                else {
+                    matriz[i][j] = -1;
+                    matriz[j][i] = 1;
+                }
+            }
             else
                 matriz[i][j] = matriz[j][i] = 0;
             j++;
@@ -356,4 +351,197 @@ complemento(grafo g)
         v2 = agnxtnode(aux, v2);
     }
     return aux;
+}
+
+static grafo
+grafo_reverso(grafo g)
+{
+    // cria o nome da matriz como "complementar de <nome de g>"
+    char nome[256];
+    snprintf(nome, sizeof(nome), "reverso de %s", agnameof(g));
+    // aloca o grafo , que herda as configuracoes do grafo g (g->desc)
+    grafo aux = agopen(nome, g->desc, NULL);
+    // preenche os vertices
+    for (vertice v = agfstnode(g); v != NULL; v = agnxtnode(g, v))
+        agnode(aux, agnameof(v), TRUE);
+    // preenche as arestas
+    vertice v2 = agfstnode(aux);
+    for (vertice v1 = agfstnode(g); v1 != NULL; v1 = agnxtnode(g, v1)) {
+        vertice u2 = agfstnode(aux);
+        for (vertice u1 = agfstnode(g); u1 != NULL; u1 = agnxtnode(g, u1)) {
+            // se nao houver aresta entre 2 vertices gera uma nova aresta
+            if (NULL != agedge(g, v1, u1, NULL, FALSE)) {
+                aresta e = agedge(g, v1, u1, NULL, FALSE);
+                vertice vaux = aghead(e);
+                if (v1 == vaux) {
+                    agedge(aux, v2, u2, NULL, TRUE);
+                }
+                else {
+                    agedge(aux, u2, v2, NULL, TRUE);
+                }
+            }
+            u2 = agnxtnode(aux, u2);
+        }
+        v2 = agnxtnode(aux, v2);
+    }
+    return aux;
+}
+
+struct grafo_ctx {
+    Agrec_t header;
+    const char pad[4]; // desabilita -Wpad warning
+    int componentes;
+};
+static char grafo_ctx_tag[] = "componentes";
+
+struct vertice_ctx {
+    Agrec_t header;
+    int estado;
+    int componente;
+};
+static char vertice_ctx_tag[] = "contexto";
+
+static void
+dfsR(grafo g, vertice v, vertice *vv, int *cnt)
+{
+    struct vertice_ctx *r_ctx = agbindrec(v, vertice_ctx_tag, 0, FALSE);
+
+    r_ctx->estado = 0;
+    for (aresta a = agfstedge(g, v); a != NULL; a = agnxtedge(g, a, v)) {
+        // vizinho
+        if (aghead(a) == v) {
+            const vertice r = agtail(a);
+            struct vertice_ctx *v_ctx =
+                agbindrec(r, vertice_ctx_tag, 0, FALSE);
+            if (v_ctx->estado == -1) dfsR(g, r, vv, cnt);
+        }
+    }
+    vv[*cnt] = v;
+    ++*cnt;
+
+    return;
+}
+
+static vertice *
+rev_posordem(grafo G)
+{
+    vertice *vv = malloc((long unsigned int)n_vertices(G) * sizeof(vertice));
+    grafo reverso = grafo_reverso(G);
+    struct vertice_ctx *v_ctx;
+    vertice v;
+    int cnt = 0;
+
+    for (v = agfstnode(reverso); v != NULL; v = agnxtnode(reverso, v)) {
+        v_ctx =
+            agbindrec(v, vertice_ctx_tag, sizeof(struct vertice_ctx), FALSE);
+        v_ctx->estado = -1;
+        v_ctx->componente = 0;
+    }
+    for (v = agfstnode(reverso); v != NULL; v = agnxtnode(reverso, v)) {
+        v_ctx = agbindrec(v, vertice_ctx_tag, 0, FALSE);
+        if (v_ctx->estado == -1) dfsR(reverso, v, vv, &cnt);
+    }
+    for (int i = 0; i < cnt; i++) {
+        for (vertice v1 = agfstnode(G); v1 != NULL; v1 = agnxtnode(G, v1)) {
+            if (!strcmp(agnameof(vv[i]), agnameof(v1))) {
+                vv[i] = v1;
+                break;
+            }
+        }
+    }
+    destroi_grafo(reverso);
+
+    return vv;
+}
+
+static void
+_decompoe(grafo g, vertice r)
+{
+    struct vertice_ctx *r_ctx = agbindrec(r, vertice_ctx_tag, 0, FALSE);
+    struct grafo_ctx *g_ctx = agbindrec(g, grafo_ctx_tag, 0, FALSE);
+
+    r_ctx->estado = 1;
+    for (aresta a = agfstedge(g, r); a != NULL; a = agnxtedge(g, a, r)) {
+        // vizinho
+        if (agtail(a) == r) {
+            const vertice v = aghead(a);
+            struct vertice_ctx *v_ctx =
+                agbindrec(v, vertice_ctx_tag, 0, FALSE);
+            if (v_ctx->estado == 0) _decompoe(g, v);
+        }
+    }
+    r_ctx->componente = g_ctx->componentes;
+    r_ctx->estado = 2;
+}
+
+grafo
+decompoe(grafo g)
+{
+    struct vertice_ctx *v_ctx;
+    struct grafo_ctx *g_ctx;
+    vertice *L;
+    vertice v;
+
+    if (!agisdirected(g)) return 0; // precisamos que seja um grafo direcionado
+
+    for (v = agfstnode(g); v != NULL; v = agnxtnode(g, v)) {
+        v_ctx =
+            agbindrec(v, vertice_ctx_tag, sizeof(struct vertice_ctx), FALSE);
+        v_ctx->estado = 0;
+        v_ctx->componente = 0;
+    }
+
+    g_ctx = agbindrec(g, grafo_ctx_tag, sizeof(struct grafo_ctx), TRUE);
+    g_ctx->componentes = 0;
+
+    L = rev_posordem(g);
+    for (int i = 0, n = n_vertices(g); i < n; ++i) {
+        v = L[i];
+        v_ctx = agbindrec(v, vertice_ctx_tag, 0, FALSE);
+        if (v_ctx->estado == 0) {
+            ++g_ctx->componentes;
+            _decompoe(g, v);
+        }
+    }
+
+
+    printf("\nNº de componentes: %i\n", g_ctx->componentes);
+
+    grafo * h = (grafo*)calloc((long unsigned int)g_ctx->componentes, sizeof(grafo));
+
+    for (int i = 0; i < g_ctx->componentes; i++){
+        h[i] = agsubg(g,NULL,TRUE);
+    }
+
+    for (vertice n = agfstnode(g); n != NULL; n = agnxtnode(g,n)){
+        for (vertice s = agfstnode(g); s != NULL; s = agnxtnode(g,s)){
+            
+            struct vertice_ctx *s_ctx =
+                    agbindrec(s, vertice_ctx_tag, 0, FALSE);    
+            struct vertice_ctx *n_ctx =
+                    agbindrec(n, vertice_ctx_tag, 0, FALSE);
+            agsubnode(h[s_ctx->componente-1],s,TRUE);
+            if(n_ctx->componente == s_ctx->componente){
+                if(NULL != agedge(g,s,n,NULL,FALSE)){
+                    aresta e = agedge(g,s,n,NULL,FALSE);
+                    if (aghead(e) == n){
+                        printf("\nNº do componentes: %i || %i \n", n_ctx->componente,g_ctx->componentes);        
+                        agsubedge(h[n_ctx->componente-1],agedge(g,s,n,NULL,FALSE),TRUE);
+                    }
+                    else{
+                        printf("\nNº do componentes: %i || %i \n", n_ctx->componente,g_ctx->componentes);        
+                        agsubedge(h[n_ctx->componente-1],agedge(g,n,s,NULL,FALSE),TRUE);
+                    }
+                }
+            }            
+        }
+    }
+    for (int i = 0; i < g_ctx->componentes; i++){
+        printf("Componente %i: \n", i);
+        escreve_grafo(h[i]);       
+    }
+    printf("\nNº de componentes: %i\n", g_ctx->componentes);
+    free(L);
+
+    return g;
 }

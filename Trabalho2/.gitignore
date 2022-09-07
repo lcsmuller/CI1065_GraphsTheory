@@ -1,0 +1,9 @@
+# Ignora tudo
+*
+# Menos os seguintes arquivos
+!.gitignore
+!Makefile
+!grafos
+!grafos/*.dot
+!*.c
+!*.h
