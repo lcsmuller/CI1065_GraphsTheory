@@ -405,7 +405,7 @@ static void
 dfsR(grafo g, vertice v, vertice *vv, int *cnt)
 {
     struct vertice_ctx *r_ctx = agbindrec(v, vertice_ctx_tag, 0, FALSE);
-    
+
     r_ctx->estado = 0;
     for (aresta a = agfstedge(g, v); a != NULL; a = agnxtedge(g, a, v)) {
         // vizinho
@@ -484,6 +484,7 @@ decompoe(grafo g)
 
     if (!agisdirected(g)) return 0; // precisamos que seja um grafo direcionado
 
+    // inicializa atributos de cada vértice
     for (v = agfstnode(g); v != NULL; v = agnxtnode(g, v)) {
         v_ctx =
             agbindrec(v, vertice_ctx_tag, sizeof(struct vertice_ctx), FALSE);
@@ -492,10 +493,11 @@ decompoe(grafo g)
     }
 
     g_ctx = agbindrec(g, grafo_ctx_tag, sizeof(struct grafo_ctx), TRUE);
-    g_ctx->componentes = 0;
+    g_ctx->componentes = 0; // contador de componentes do grafo
 
-    L = rev_posordem(g);
-    for (int i = n_vertices(g)-1, n = 0; i >= n; --i) {
+    // decompoe o grafo para se obter os componentes individuais
+    L = rev_posordem(g); // obtêm o reverso pós ordem do grafo direcionado
+    for (int i = n_vertices(g) - 1, n = 0; i >= n; --i) {
         v = L[i];
         v_ctx = agbindrec(v, vertice_ctx_tag, 0, FALSE);
         if (v_ctx->estado == 0) {
@@ -504,36 +506,33 @@ decompoe(grafo g)
         }
     }
 
-    grafo * h = (grafo*)calloc((long unsigned int)g_ctx->componentes, sizeof(grafo));
-
-    for (int i = 0; i < g_ctx->componentes; i++){
-        h[i] = agsubg(g,NULL,TRUE);
+    // cria subgrafos para componente individual, e imprime na tela
+    grafo *h = malloc((size_t)g_ctx->componentes * sizeof( *h));
+    for (int i = 0; i < g_ctx->componentes; i++) {
+        h[i] = agsubg(g, NULL, TRUE);
     }
-
-    for (vertice n = agfstnode(g); n != NULL; n = agnxtnode(g,n)){
-        for (vertice s = agfstnode(g); s != NULL; s = agnxtnode(g,s)){
-            
+    for (vertice n = agfstnode(g); n != NULL; n = agnxtnode(g, n)) {
+        for (vertice s = agfstnode(g); s != NULL; s = agnxtnode(g, s)) {
             struct vertice_ctx *s_ctx =
-                    agbindrec(s, vertice_ctx_tag, 0, FALSE);    
-            struct vertice_ctx *n_ctx =
-                    agbindrec(n, vertice_ctx_tag, 0, FALSE);
-            agsubnode(h[s_ctx->componente-1],s,TRUE);
-            if(n_ctx->componente == s_ctx->componente){
-                if(NULL != agedge(g,s,n,NULL,FALSE)){
-                    aresta e = agedge(g,s,n,NULL,FALSE);
-                    if (aghead(e) == n){
-                        agsubedge(h[n_ctx->componente-1],agedge(g,s,n,NULL,FALSE),TRUE);
-                    }
-                    else{
-                        agsubedge(h[n_ctx->componente-1],agedge(g,n,s,NULL,FALSE),TRUE);
-                    }
-                }
-            }            
+                                   agbindrec(s, vertice_ctx_tag, 0, FALSE),
+                               *n_ctx =
+                                   agbindrec(n, vertice_ctx_tag, 0, FALSE);
+
+            agsubnode(h[s_ctx->componente - 1], s, TRUE);
+            if (n_ctx->componente == s_ctx->componente
+                && agedge(g, s, n, NULL, FALSE) != NULL)
+            {
+                aresta e = agedge(g, s, n, NULL, FALSE);
+                if (aghead(e) == n)
+                    agsubedge(h[n_ctx->componente - 1],
+                              agedge(g, s, n, NULL, FALSE), TRUE);
+                else
+                    agsubedge(h[n_ctx->componente - 1],
+                              agedge(g, n, s, NULL, FALSE), TRUE);
+            }
         }
     }
-    for (int i = 0; i < g_ctx->componentes; i++){
-        escreve_grafo(h[i]); 
-    }
+
     free(h);
     free(L);
 
