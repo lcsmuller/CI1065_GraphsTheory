@@ -508,6 +508,7 @@ decompoe(grafo g)
 
     // cria subgrafos para componente individual, e imprime na tela
     grafo *h = malloc((size_t)g_ctx->componentes * sizeof( *h));
+    
     for (int i = 0; i < g_ctx->componentes; i++) {
         h[i] = agsubg(g, NULL, TRUE);
     }
