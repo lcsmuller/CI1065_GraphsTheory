@@ -1,5 +1,0 @@
-// grafo não-direcionado simples
-graph G {
-    a -- b -- c;
-    b -- d;
-}
